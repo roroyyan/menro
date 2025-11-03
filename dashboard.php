@@ -77,7 +77,7 @@ if ($role === 'admin') {
 
     <!-- =================== DASHBOARD ADMIN (Versi Baru) =================== -->
     <div class="container-fluid px-4">
-      <h3 class="mt-3 mb-4 text-center fw-bold text-primary">📊 Dashboard Aspirasi Mahasiswa</h3>
+      <h3 class="mt-3 mb-4 text-center fw-bold text-primary">Dashboard Aspirasi Mahasiswa</h3>
 
       <!-- Statistik -->
       <div class="row g-4 mb-4">
@@ -300,7 +300,7 @@ if ($role === 'admin') {
        </style>
     </head>
     <body>
-    <header>📝 Sistem Aspirasi Mahasiswa UDINUS</header>
+    <header>Sistem Aspirasi Mahasiswa UDINUS</header>
     <main>
       <div class="form-wrapper">
         <h4>Formulir Aspirasi</h4>

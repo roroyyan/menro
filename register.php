@@ -5,10 +5,11 @@ $error = '';
 $success = '';
 
 if (isset($_POST['register'])) {
+    // Membersihkan spasi aneh (jika ada)
     $username = trim($_POST['username']);
     $password = $_POST['password'];
-    $confirm  = $_POST['confirm'];
-    $role     = 'mahasiswa'; // 🔹 role otomatis mahasiswa
+    $confirm = $_POST['confirm'];
+    $role = 'mahasiswa'; // 🔹 role otomatis mahasiswa
 
     if ($password !== $confirm) {
         $error = 'Konfirmasi password tidak cocok.';
@@ -41,6 +42,11 @@ if (isset($_POST['register'])) {
 <html>
 <head>
   <meta charset="utf-8">
+  
+  <!-- ▼▼▼ PERBAIKAN 1: TAMBAHKAN VIEWPORT AGAR TIDAK DI-ZOOM OUT DI HP ▼▼▼ -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- ▲▲▲ SELESAI PERBAIKAN 1 ▲▲▲ -->
+
   <title>Registrasi - Aspirasi Mahasiswa</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
@@ -50,9 +56,15 @@ if (isset($_POST['register'])) {
       display: flex;
       justify-content: center;
       align-items: center;
+      /* Tambahkan padding sedikit agar card tidak menempel di tepi HP */
+      padding: 10px 0;
     }
     .login-card {
-      width: 360px;
+      /* ▼▼▼ PERBAIKAN 2: UBAH 'width' MENJADI 'max-width' (SAMA SEPERTI LOGIN.PHP) ▼▼▼ */
+      max-width: 380px; /* Lebar maksimal di desktop */
+      width: 90%;       /* Lebar di HP (90% agar ada spasi di samping) */
+      /* ▲▲▲ SELESAI PERBAIKAN 2 ▲▲▲ */
+
       border-radius: 15px;
       overflow: hidden;
       box-shadow: 0 5px 20px rgba(0,0,0,0.15);
@@ -122,5 +134,10 @@ if (isset($_POST['register'])) {
       </form>
     </div>
   </div>
+
+  <!-- ▼▼▼ PERBAIKAN 3: TAMBAHKAN BOOTSTRAP JS (SAMA SEPERTI LOGIN.PHP) ▼▼▼ -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- ▲▲▲ SELESAI PERBAIKAN 3 ▲▲▲ -->
+
 </body>
 </html>

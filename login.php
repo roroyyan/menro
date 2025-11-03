@@ -141,9 +141,7 @@ if (isset($_POST['login'])) {
         </div>
       </form>
       <hr>
-      <p class="text-muted small text-center mb-0">
-        Contoh akun: admin/admin123 | rienn/rienn123
-      </p>
+
     </div>
   </div>
   <!-- Kita tidak butuh Bootstrap JS di sini karena tidak ada dropdown/modal -->

@@ -2,6 +2,9 @@
 // manajemen_admin.php
 
 // Cek sesi dan pastikan dia superadmin
+// --- ▼▼▼ PERBAIKAN V18: Tambahkan pengecekan session_start ▼▼▼ ---
+if (session_status() === PHP_SESSION_NONE) session_start();
+// --- ▲▲▲ SELESAI PERBAIKAN V18 ▲▲▲ ---
 if (!isset($_SESSION['is_superadmin']) || $_SESSION['is_superadmin'] != 1) {
     echo '<div class="alert alert-danger">Anda tidak memiliki hak akses ke halaman ini.</div>';
     exit;
@@ -17,10 +20,11 @@ $error = '';
 
 // 1. PROSES: Tambah Admin Baru
 if (isset($_POST['tambah_admin'])) {
+    // --- ▼▼▼ PERBAIKAN V18: Bersihkan kode PHP dari spasi aneh ▼▼▼ ---
     $username = trim($_POST['username']);
     $password = $_POST['password'];
-    // ▼▼▼ TAMBAHAN BARU: Ambil nilai checkbox 'can_ubah_status' ▼▼▼
     $can_ubah_status = isset($_POST['can_ubah_status']) ? 1 : 0;
+    // --- ▲▲▲ SELESAI PERBAIKAN V18 ▲▲▲ ---
 
     if (!empty($username) && !empty($password)) {
         // Cek username
@@ -33,9 +37,7 @@ if (isset($_POST['tambah_admin'])) {
         } else {
             // Buat admin baru
             $hash = password_hash($password, PASSWORD_BCRYPT);
-            // ▼▼▼ PERUBAHAN QUERY: Masukkan 'can_ubah_status' ▼▼▼
             $stmt = $koneksi->prepare("INSERT INTO user (username, password, role, can_ubah_status) VALUES (?, ?, 'admin', ?)");
-            // ▼▼▼ PERUBAHAN BIND: Tambah 'i' (integer) untuk status ▼▼▼
             $stmt->bind_param('ssi', $username, $hash, $can_ubah_status);
             if ($stmt->execute()) {
                 $msg = 'Admin baru berhasil dibuat.';
@@ -50,7 +52,6 @@ if (isset($_POST['tambah_admin'])) {
 
 // 2. PROSES: Tambah Penugasan (Manual)
 if (isset($_POST['tambah_penugasan'])) {
-    // ... (KODE INI TETAP SAMA) ...
     $user_id = (int)$_POST['user_id'];
     $kategori_id = (int)$_POST['kategori_id'];
     $gedung_id = (int)$_POST['gedung_id'];
@@ -79,9 +80,10 @@ if (isset($_POST['tambah_penugasan'])) {
 }
 
 // 3. PROSES: Hapus Penugasan
-if (isset($_POST['hapus_penugasan'])) {
-    // ... (KODE INI TETAP SAMA) ...
-    $penugasan_id = (int)$_POST['penugasan_id'];
+// --- ▼▼▼ PERBAIKAN V18: Ganti logika 'confirm()' dengan 'submit_form_id' ▼▼▼ ---
+if (isset($_POST['submit_form_id']) && strpos($_POST['submit_form_id'], 'form-hapus-penugasan-') === 0) {
+    $penugasan_id = (int)str_replace('form-hapus-penugasan-', '', $_POST['submit_form_id']);
+// --- ▲▲▲ SELESAI PERBAIKAN V18 ▲▲▲ ---
     $stmt = $koneksi->prepare("DELETE FROM admin_penugasan WHERE id = ?");
     $stmt->bind_param('i', $penugasan_id);
     if ($stmt->execute()) {
@@ -92,9 +94,10 @@ if (isset($_POST['hapus_penugasan'])) {
 }
 
 // 4. PROSES: Hapus Admin (Permanen)
-if (isset($_POST['hapus_admin'])) {
-    // ... (KODE INI TETAP SAMA) ...
-    $user_id_to_delete = (int)$_POST['user_id_to_delete'];
+// --- ▼▼▼ PERBAIKAN V18: Ganti logika 'confirm()' dengan 'submit_form_id' ▼▼▼ ---
+if (isset($_POST['submit_form_id']) && strpos($_POST['submit_form_id'], 'form-hapus-admin-') === 0) {
+    $user_id_to_delete = (int)str_replace('form-hapus-admin-', '', $_POST['submit_form_id']);
+// --- ▲▲▲ SELESAI PERBAIKAN V18 ▲▲▲ ---
     $current_user_id = (int)$_SESSION['user_id'];
 
     if ($user_id_to_delete === $current_user_id) {
@@ -104,10 +107,16 @@ if (isset($_POST['hapus_admin'])) {
         $error = 'Admin utama (ID 1) tidak boleh dihapus.';
     } 
     else {
+        // Hapus penugasannya dulu
+        $stmtDelTugas = $koneksi->prepare("DELETE FROM admin_penugasan WHERE user_id = ?");
+        $stmtDelTugas->bind_param('i', $user_id_to_delete);
+        $stmtDelTugas->execute(); // Jalankan dulu
+
+        // Baru hapus user-nya
         $stmt = $koneksi->prepare("DELETE FROM user WHERE id = ? AND role = 'admin'");
         $stmt->bind_param('i', $user_id_to_delete);
         if ($stmt->execute()) {
-            $msg = 'Akun admin berhasil dihapus permanen.';
+            $msg = 'Akun admin dan semua penugasannya berhasil dihapus permanen.';
         } else {
             $error = 'Gagal menghapus akun admin.';
         }
@@ -116,7 +125,6 @@ if (isset($_POST['hapus_admin'])) {
 
 // 5. PROSES: Penugasan Otomatis (Bulk)
 if (isset($_POST['tambah_penugasan_otomatis'])) {
-    // ... (KODE INI TETAP SAMA) ...
     $user_id = (int)$_POST['user_id'];
     $mode = $_POST['mode_penugasan'] ?? '';
     $counter = 0;
@@ -232,7 +240,6 @@ $list_penugasan = $koneksi->query("
     ORDER BY g.nama_gedung, k.nama_kategori, u.username
 ");
 
-// ▼▼▼ PERUBAHAN QUERY: Ambil 'can_ubah_status' ▼▼▼
 $daftar_semua_admin = $koneksi->query("
     SELECT id, username, is_superadmin, can_ubah_status 
     FROM user 
@@ -270,18 +277,12 @@ $daftar_semua_admin = $koneksi->query("
                         <label class="form-label">Password</label>
                         <input type="password" name="password" class="form-control" required>
                     </div>
-                    <!-- ======================================================= -->
-                    <!-- ▼▼▼ TAMBAHAN BARU: Checkbox Izin Ubah Status ▼▼▼ -->
-                    <!-- ======================================================= -->
                     <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" name="can_ubah_status" value="1" id="checkUbahStatus">
                         <label class="form-check-label" for="checkUbahStatus">
                             Beri izin Ubah Status Aksi (Peran: Admin Kategori)
                         </label>
                     </div>
-                    <!-- ======================================================= -->
-                    <!-- ▲▲▲ SELESAI TAMBAHAN ▲▲▲ -->
-                    <!-- ======================================================= -->
                     <button type="submit" name="tambah_admin" class="btn btn-primary">Buat Admin</button>
                 </form>
             </div>
@@ -349,7 +350,7 @@ $daftar_semua_admin = $koneksi->query("
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="mode_penugasan" id="mode-bulk-gedung" value="bulk_gedung" required>
                             <label class="form-check-label" for="mode-bulk-gedung">
-                                Tugaskan ke **SEMUA KATEGORI** di **1 Gedung** (Peran: Admin Gedung)
+                                Tugaskan ke <strong>SEMUA KATEGORI</strong> di <strong>1 Gedung</strong> (Peran: Admin Gedung)
                             </label>
                         </div>
                         <div id="div-bulk-gedung" class="ms-4 mt-2" style="display:none;">
@@ -367,7 +368,7 @@ $daftar_semua_admin = $koneksi->query("
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="mode_penugasan" id="mode-bulk-kategori" value="bulk_kategori" required>
                             <label class="form-check-label" for="mode-bulk-kategori">
-                                Tugaskan ke **1 KATEGORI** di **Semua Gedung** (Peran: Admin Kategori)
+                                Tugaskan ke <strong>1 KATEGORI</strong> di <strong>Semua Gedung</strong> (Peran: Admin Kategori)
                             </label>
                         </div>
                         <div id="div-bulk-kategori" class="ms-4 mt-2" style="display:none;">
@@ -477,7 +478,11 @@ $daftar_semua_admin = $koneksi->query("
             <div class="card-body">
                 <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
                     <table class="table table-bordered table-striped table-hover">
-                        <thead class="table-light sticky-top">
+                        <!-- ▼▼▼ PERUBAHAN DI SINI ▼▼▼ -->
+                        <!-- 'table-light' diganti 'bg-white' agar background solid (tidak tembus) -->
+                        <!-- Tambahkan inline style untuk z-index -->
+                        <thead class="bg-white sticky-top" style="z-index: 1010;">
+                        <!-- ▲▲▲ SELESAI PERUBAHAN ▲▲▲ -->
                             <tr>
                                 <th>Admin</th>
                                 <th>Kategori</th>
@@ -493,14 +498,21 @@ $daftar_semua_admin = $koneksi->query("
                                         <td><?= htmlspecialchars($row['nama_kategori']) ?></td>
                                         <td><?= htmlspecialchars($row['nama_gedung']) ?></td>
                                         <td>
-                                            <form method="POST" action="admin.php?page=manajemen_admin&<?= http_build_query($_GET) ?>" onsubmit="return confirm('Anda yakin ingin HAPUS penugasan ini?');">
-                                                <input type="hidden" name="penugasan_id" value="<?= $row['id'] ?>">
-                                                <button type="submit" name="hapus_penugasan" class="btn btn-danger btn-sm" title="Hapus Penugasan">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash-fill" viewBox="0 0 16 16">
-                                                      <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5.5zm3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0z"/>
-                                                    </svg>
-                                                </button>
+                                            <!-- ▼▼▼ PERBAIKAN V18: Logika Modal untuk Tombol Hapus ▼▼▼ -->
+                                            <form method="POST" action="admin.php?page=manajemen_admin&<?= http_build_query($_GET) ?>" id="form-hapus-penugasan-<?= $row['id'] ?>">
+                                                <input type="hidden" name="submit_form_id" value="form-hapus-penugasan-<?= $row['id'] ?>">
                                             </form>
+                                            <button type="button" class="btn btn-danger btn-sm" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#konfirmasiHapusModal" 
+                                                    data-pesan="Anda yakin ingin HAPUS penugasan (Admin: <?= htmlspecialchars($row['username']) ?>, Kategori: <?= htmlspecialchars($row['nama_kategori']) ?>)?"
+                                                    data-form-id="form-hapus-penugasan-<?= $row['id'] ?>"
+                                                    title="Hapus Penugasan">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash-fill" viewBox="0 0 16 16">
+                                                  <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5.5zm3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0z"/>
+                                                </svg>
+                                            </button>
+                                            <!-- ▲▲▲ SELESAI PERBAIKAN V18 ▲▲▲ -->
                                         </td>
                                     </tr>
                                 <?php endwhile; ?>
@@ -542,9 +554,6 @@ $daftar_semua_admin = $koneksi->query("
                                     <tr>
                                         <td><?= htmlspecialchars($admin['username']) ?></td>
                                         <td>
-                                            <!-- ======================================================= -->
-                                            <!-- ▼▼▼ PERUBAHAN LOGIKA: Tampilkan Peran Baru ▼▼▼ -->
-                                            <!-- ======================================================= -->
                                             <?php if ($admin['is_superadmin'] == 1): ?>
                                                 <span class="badge bg-primary">Admin Pusat</span>
                                             <?php elseif ($admin['can_ubah_status'] == 1): ?>
@@ -552,23 +561,28 @@ $daftar_semua_admin = $koneksi->query("
                                             <?php else: ?>
                                                 <span class="badge bg-secondary">Admin Gedung (Monitor)</span>
                                             <?php endif; ?>
-                                            <!-- ======================================================= -->
-                                            <!-- ▲▲▲ SELESAI PERUBAHAN ▲▲▲ -->
-                                            <!-- ======================================================= -->
                                         </td>
                                         <td>
-                                            <form method="POST" action="admin.php?page=manajemen_admin&<?= http_build_query($_GET) ?>" onsubmit="return confirm('PERINGATAN: Menghapus admin bersifat PERMANEN dan akan menghapus semua penugasannya. Anda yakin?');">
-                                                <input type="hidden" name="user_id_to_delete" value="<?= (int)$admin['id'] ?>">
-                                                
-                                                <?php 
-                                                if ((int)$admin['id'] === (int)$_SESSION['user_id'] || (int)$admin['id'] === 1): 
-                                                ?>
-                                                    <button type="submit" name="hapus_admin" class="btn btn-danger btn-sm" disabled>Hapus</button>
-                                                    <small class="text-muted">(Tidak bisa dihapus)</small>
-                                                <?php else: ?>
-                                                    <button type="submit" name="hapus_admin" class="btn btn-danger btn-sm">Hapus</button>
-                                                <?php endif; ?>
+                                            <!-- ▼▼▼ PERBAIKAN V18: Logika Modal untuk Tombol Hapus ▼▼▼ -->
+                                            <form method="POST" action="admin.php?page=manajemen_admin&<?= http_build_query($_GET) ?>" id="form-hapus-admin-<?= (int)$admin['id'] ?>">
+                                                <input type="hidden" name="submit_form_id" value="form-hapus-admin-<?= (int)$admin['id'] ?>">
                                             </form>
+                                            
+                                            <?php 
+                                            if ((int)$admin['id'] === (int)$_SESSION['user_id'] || (int)$admin['id'] === 1): 
+                                            ?>
+                                                <button type="button" class="btn btn-danger btn-sm" disabled>Hapus</button>
+                                                <small class="text-muted">(Tidak bisa dihapus)</small>
+                                            <?php else: ?>
+                                                <button type="button" class="btn btn-danger btn-sm"
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#konfirmasiHapusModal" 
+                                                        data-pesan="PERINGATAN: Menghapus admin '<?= htmlspecialchars($admin['username']) ?>' bersifat PERMANEN dan akan menghapus semua penugasannya. Anda yakin?"
+                                                        data-form-id="form-hapus-admin-<?= (int)$admin['id'] ?>">
+                                                    Hapus
+                                                </button>
+                                            <?php endif; ?>
+                                            <!-- ▲▲▲ SELESAI PERBAIKAN V18 ▲▲▲ -->
                                         </td>
                                     </tr>
                                 <?php endwhile; ?>
@@ -584,4 +598,55 @@ $daftar_semua_admin = $koneksi->query("
         </div>
     </div>
 </div>
+
+<!-- ▼▼▼ PERBAIKAN V18: HTML untuk Modal Konfirmasi ▼▼▼ -->
+<div class="modal fade" id="konfirmasiHapusModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-danger">Konfirmasi Hapus</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="pesanModalBody">Anda yakin ingin menghapus ini?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-danger" id="tombolHapusModal">Ya, Hapus</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const konfirmasiHapusModal = document.getElementById('konfirmasiHapusModal');
+    const tombolHapusModal = document.getElementById('tombolHapusModal');
+    const pesanModalBody = document.getElementById('pesanModalBody');
+    let formIdToSubmit = null;
+
+    konfirmasiHapusModal.addEventListener('show.bs.modal', function (event) {
+        // Tombol yang memicu modal
+        const button = event.relatedTarget;
+        
+        // Ambil data dari atribut data-bs-*
+        const pesan = button.getAttribute('data-pesan');
+        formIdToSubmit = button.getAttribute('data-form-id');
+        
+        // Perbarui konten modal
+        pesanModalBody.textContent = pesan;
+    });
+
+    // Saat tombol "Ya, Hapus" di dalam modal diklik
+    tombolHapusModal.addEventListener('click', function () {
+        if (formIdToSubmit) {
+            const formToSubmit = document.getElementById(formIdToSubmit);
+            if (formToSubmit) {
+                formToSubmit.submit();
+            }
+        }
+    });
+});
+</script>
+<!-- ▲▲▲ SELESAI PERBAIKAN V18 ▲▲▲ -->
 

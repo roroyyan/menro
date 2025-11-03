@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 29, 2025 at 06:02 AM
+-- Generation Time: Nov 01, 2025 at 01:44 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.1.25
 
@@ -75,7 +75,8 @@ INSERT INTO `admin_penugasan` (`id`, `user_id`, `kategori_id`, `gedung_id`) VALU
 (56, 33, 4, 4),
 (57, 33, 5, 4),
 (58, 33, 6, 4),
-(59, 33, 7, 4);
+(59, 33, 7, 4),
+(60, 34, 3, 4);
 
 -- --------------------------------------------------------
 
@@ -121,8 +122,9 @@ INSERT INTO `aspirasi` (`id`, `nama`, `nim`, `jurusan`, `kategori_id`, `gedung_i
 (33, 'rienn', '2134', 'wetr', 1, 8, 'asewe', 'Selesai', 0, '2025-10-28 19:42:59'),
 (34, 'rienn', 'awte', '234', 1, 8, 'easrger', 'Selesai', 0, '2025-10-28 19:43:08'),
 (35, 'rienn', '123', 'sdrt', 1, 8, 'drgehtrerw', 'Selesai', 0, '2025-10-28 19:46:16'),
-(36, 'rienn', '1324', '314', 1, 1, '546456', 'Menunggu', 0, '2025-10-28 19:57:36'),
-(37, 'rienn', '1243', '5645', 4, 1, 'awertret', 'Menunggu', 0, '2025-10-28 19:58:18');
+(36, 'rienn', '1324', '314', 1, 1, '546456', 'Selesai', 0, '2025-10-28 19:57:36'),
+(37, 'rienn', '1243', '5645', 4, 1, 'awertret', 'Menunggu', 0, '2025-10-28 19:58:18'),
+(38, 'rienn', '123', 'TI', 3, 4, 'Toilet lantai 2 kotor', 'Selesai', 0, '2025-10-29 11:47:47');
 
 -- --------------------------------------------------------
 
@@ -217,7 +219,8 @@ INSERT INTO `user` (`id`, `username`, `password`, `role`, `is_superadmin`, `can_
 (30, 'admin_B', '$2y$10$MzbjjKn07AIlnkr1l17uW.SWCyP5J6GtVH5tt03f2j8JKpZrL6Gwi', 'admin', 0, 0),
 (31, 'admin_C', '$2y$10$aUzkOY9/3FHMD3bce/hsWe/SZxUupYn8YTNqGxBkywkYZC.hdJ51e', 'admin', 0, 0),
 (32, 'RK.A', '$2y$10$d8Rf.PPtuLHo1fNbFjoHWO9pOUprrwGQ8sZmX/vyrlw624VKfAp4y', 'admin', 0, 1),
-(33, 'admin_D', '$2y$10$v7D58OuTtd1HFDldaHRCp.dV.Ce3hd875C46vJWnTlNmkB4re0O56', 'admin', 0, 0);
+(33, 'admin_D', '$2y$10$v7D58OuTtd1HFDldaHRCp.dV.Ce3hd875C46vJWnTlNmkB4re0O56', 'admin', 0, 0),
+(34, 'KK.D', '$2y$10$WCwMDvsWEsx9ID.LSH6QQek8NVFNbRKepVsjtBPBlEwcQzTynIGRG', 'admin', 0, 1);
 
 --
 -- Indexes for dumped tables
@@ -279,7 +282,7 @@ ALTER TABLE `user`
 -- AUTO_INCREMENT for table `admin_penugasan`
 --
 ALTER TABLE `admin_penugasan`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
 
 --
 -- AUTO_INCREMENT for table `article`
@@ -291,7 +294,7 @@ ALTER TABLE `article`
 -- AUTO_INCREMENT for table `aspirasi`
 --
 ALTER TABLE `aspirasi`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT for table `gallery`
@@ -315,7 +318,7 @@ ALTER TABLE `kategori`
 -- AUTO_INCREMENT for table `user`
 --
 ALTER TABLE `user`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
 -- Constraints for dumped tables

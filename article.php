@@ -9,11 +9,10 @@ if (!isset($_SESSION['username'])) {
     exit;
 }
 
-// Tentukan Izin
-$role = $_SESSION['role'] ?? 'mahasiswa'; // <-- $role akan jadi 'mahasiswa' untuk rienn
+// Tentukan Izin (Variabel ini diambil dari 'admin.php', tapi kita definisikan ulang di sini untuk keamanan)
+$role = $_SESSION['role'] ?? 'mahasiswa';
 $user_id = (int)($_SESSION['user_id'] ?? 0);
-$is_superadmin = (int)($_SESSION['is_superadmin'] ?? 0);
-// Tentukan apakah dia boleh ubah status (Superadmin Boleh, Eksekutor Boleh, Monitor Tidak Boleh)
+$is_superadmin = (int)($_SESSION['is_superadmin'] ?? 0); // <-- PENTING UNTUK TOMBOL HAPUS
 $can_ubah_status = ($is_superadmin == 1) || (isset($_SESSION['can_ubah_status']) && $_SESSION['can_ubah_status'] == 1);
 
 
@@ -202,7 +201,7 @@ if (!empty($sqlList)) {
             <?php if ($role === 'admin'): ?>
                 <?= ($counts[$selectedCategoryId] ?? 0) ?> laporan (sesuai scope Anda)
             <?php else: ?>
-                 <?= ($counts[$selectedCategoryId] ?? 0) ?> laporan
+                <?= ($counts[$selectedCategoryId] ?? 0) ?> laporan
             <?php endif; ?>
           </small>
         </div>
@@ -216,7 +215,8 @@ if (!empty($sqlList)) {
         <?php if ($error): ?>
           <div class="alert alert-danger">Query error: <?= htmlspecialchars($error) ?></div>
         <?php else: ?>
-          <table class="table table-bordered align-middle">
+          <!-- ▼▼▼ PERBAIKAN V19: 'align-middle' ditambahkan ke tabel ▼▼▼ -->
+          <table class="table table-bordered table-striped table-hover align-middle">
             <thead>
               <tr class="table-light text-center">
                 <th style="width:40px">#</th>
@@ -229,10 +229,12 @@ if (!empty($sqlList)) {
                 <th style="width:120px">Status</th>
                 <th style="width:150px">Tanggal</th>
                 
-                <!-- ▼▼▼ PERBAIKAN: Sembunyikan kolom ini dari mahasiswa ▼▼▼ -->
                 <?php if ($can_ubah_status): ?><th style="width:160px">Aksi Eksekutor</th><?php endif; ?>
                 <?php if ($role === 'admin'): ?><th style="width:100px">Aksi Lain</th><?php endif; ?>
-                <!-- ▲▲▲ SELESAI PERBAIKAN ▲▲▲ -->
+                
+                <!-- ▼▼▼ TAMBAHAN BARU: Kolom Hapus ▼▼▼ -->
+                <?php if ($is_superadmin): ?><th style="width:80px">Aksi Hapus</th><?php endif; ?>
+                <!-- ▲▲▲ SELESAI TAMBAHAN ▲▲▲ -->
 
               </tr>
             </thead>
@@ -242,7 +244,7 @@ if (!empty($sqlList)) {
                 $i = 1;
                 while ($row = $resList->fetch_assoc()):
                   
-                  // ▼▼▼ PERBAIKAN: Logika Flag hanya untuk admin ▼▼▼
+                  // ▼▼▼ LOGIKA FLAG (DARI SEBELUMNYA) ▼▼▼
                   $button_disabled = 'disabled';
                   $button_title = 'Hanya admin yang bisa menggunakan fitur ini.';
                   $button_action_text = 'Flag';
@@ -255,25 +257,19 @@ if (!empty($sqlList)) {
                       $button_class = $is_flagged ? 'btn-danger' : 'btn-outline-danger';
 
                       if ($is_superadmin) {
-                          // Superadmin bisa melakukan apa saja
                           $button_disabled = '';
                           $button_title = $is_flagged ? 'Batal Tandai (Superadmin)' : 'Tandai (Superadmin)';
                       
                       } elseif (!$can_ubah_status) { 
-                          // Ini adalah MONITOR (Admin Gedung)
                           if (!$is_flagged) {
-                              // Monitor HANYA bisa MENAMBAH flag
                               $button_disabled = '';
                               $button_title = 'Tandai Aspirasi Ini (Monitor)';
                           } else {
-                              // Monitor TIDAK BISA Un-Flag
                               $button_title = 'Aspirasi sudah ditandai. Hanya Eksekutor/Superadmin yang bisa Un-Flag.';
                           }
                       
                       } elseif ($can_ubah_status) { 
-                          // Ini adalah EKSEKUTOR (Admin Kategori)
                           if ($is_flagged) {
-                              // Eksekutor HANYA bisa MENGHAPUS flag
                               if ($status === 'Selesai') {
                                   $button_disabled = '';
                                   $button_title = 'Batal Tandai (Tugas Selesai)';
@@ -281,32 +277,31 @@ if (!empty($sqlList)) {
                                   $button_title = 'Hanya bisa Un-Flag jika status aspirasi sudah Selesai.';
                               }
                           } else {
-                              // Eksekutor TIDAK BISA Flag
                               $button_title = 'Hanya Monitor/Superadmin yang bisa Flag.';
                           }
                       }
                   }
-                  // ▲▲▲ SELESAI PERBAIKAN ▲▲▲
+                  // ▲▲▲ SELESAI LOGIKA FLAG ▲▲▲
               ?>
                 <tr>
                   <td class="text-center"><?= $i++ ?></td>
-                  <td><?= htmlspecialchars($row['nama']) ?></td>
-                  <td><?= htmlspecialchars($row['nim']) ?></td>
-                  <td><?= htmlspecialchars($row['jurusan']) ?></td>
-                  <td><?= htmlspecialchars($row['nama_kategori']) ?></td>
-                  <td><?= htmlspecialchars($row['nama_gedung']) ?></td>
+                  <td class="text-center"><?= htmlspecialchars($row['nama']) ?></td>
+                  <td class="text-center"><?= htmlspecialchars($row['nim']) ?></td>
+                  <td class="text-center"><?= htmlspecialchars($row['jurusan']) ?></td>
+                  <td class="text-center"><?= htmlspecialchars($row['nama_kategori']) ?></td>
+                  <td class="text-center"><?= htmlspecialchars($row['nama_gedung']) ?></td>
                   
-                  <!-- ▼▼▼ PERBAIKAN RATA TENGAH (v6) ▼▼▼ -->
-                  <!-- Pindahkan 'text-center' ke DIV bagian dalam -->
-                  <td style="max-width:380px;white-space:pre-wrap;"> 
-                    <div class="text-center"> <!-- text-center ditaruh di sini -->
+                  <!-- ▼▼▼ PERBAIKAN V19: Kolom Aspirasi (Flexbox) ▼▼▼ -->
+                  <td style="max-width:380px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                       <?php if ($row['is_flagged'] == 1): ?>
-                          <span class="badge bg-danger mb-1">🚩 PERLU TINDAKAN</span><br>
+                          <span class="badge bg-danger mb-1">
+                            🚩 PERLU TINDAKAN
+                          </span>
                       <?php endif; ?>
-                      <?= nl2br(htmlspecialchars($row['isi_aspirasi'])) ?>
-                    </div>
+                      <!-- Menghapus <span> pembungkus dan trim() data -->
+                      <?= htmlspecialchars($row['isi_aspirasi']) ?>
                   </td>
-                  <!-- ▲▲▲ SELESAI PERBAIKAN ▲▲▲ -->
+                  <!-- ▲▲▲ SELESAI PERBAIKAN V19 ▲▲▲ -->
 
                   <td class="text-center">
                     <?php
@@ -321,12 +316,12 @@ if (!empty($sqlList)) {
 
                   <!-- Kolom Aksi Eksekutor (Ubah Status) -->
                   <?php if ($can_ubah_status): ?>
-                    <td>
+                    <td class="text-center"> 
                       <form method="post" action="update_status.php">
                         <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                         <input type="hidden" name="return_page" value="article&category_id=<?= $selectedCategoryId ?>">
                         
-                        <div class="d-flex gap-1">
+                        <div class="d-flex gap-1 justify-content-center">
                           <select name="status" class="form-select form-select-sm" style="width:110px;">
                             <option value="Menunggu" <?= $row['status']=='Menunggu'?'selected':'' ?>>Menunggu</option>
                             <option value="Diproses" <?= $row['status']=='Diproses'?'selected':'' ?>>Diproses</option>
@@ -338,20 +333,42 @@ if (!empty($sqlList)) {
                     </td>
                   <?php endif; ?>
 
-                  <!-- ▼▼▼ PERBAIKAN: Sembunyikan kolom ini dari mahasiswa ▼▼▼ -->
+                  <!-- Kolom Aksi Lain (Flag) -->
                   <?php if ($role === 'admin'): ?>
                     <td class="text-center">
-                        <form method="post" action="flag_aspirasi.php">
-                            <input type="hidden" name="aspirasi_id" value="<?= (int)$row['id'] ?>">
-                            <input type="hidden" name="return_page" value="article&category_id=<?= $selectedCategoryId ?>">
-                            <button type="submit" class="btn btn-sm <?= $button_class ?>" 
-                                    title="<?= htmlspecialchars($button_title) ?>" <?= $button_disabled ?>>
-                                🚩 <?= $button_action_text ?>
-                            </button>
-                        </form>
+                      <form method="post" action="flag_aspirasi.php">
+                        <input type="hidden" name="aspirasi_id" value="<?= (int)$row['id'] ?>">
+                        <input type="hidden" name="return_page" value="article&category_id=<?= $selectedCategoryId ?>">
+                        <button type="submit" class="btn btn-sm <?= $button_class ?>" 
+                                title="<?= htmlspecialchars($button_title) ?>" <?= $button_disabled ?>>
+                          🚩 <?= $button_action_text ?>
+                        </button>
+                      </form>
                     </td>
                   <?php endif; ?>
-                  <!-- ▲▲▲ SELESAI PERBAIKAN ▲▲▲ -->
+
+                  <!-- ▼▼▼ TAMBAHAN BARU: Tombol Hapus (Hanya Superadmin) ▼▼▼ -->
+                  <?php if ($is_superadmin): ?>
+                    <td class="text-center">
+                      <!-- Form tersembunyi untuk modal -->
+                      <form method="POST" action="hapus_aspirasi.php" id="form-hapus-aspirasi-<?= (int)$row['id'] ?>">
+                        <input type="hidden" name="submit_form_id" value="form-hapus-aspirasi-<?= (int)$row['id'] ?>">
+                        <input type="hidden" name="category_id" value="<?= $selectedCategoryId ?>">
+                      </form>
+                      <!-- Tombol pemicu modal (data-bs-target harus #konfirmasiHapusModal) -->
+                      <button type="button" class="btn btn-danger btn-sm" 
+                              data-bs-toggle="modal" 
+                              data-bs-target="#konfirmasiHapusModal" 
+                              data-pesan="Anda yakin ingin HAPUS PERMANEN aspirasi ini (ID: <?= (int)$row['id'] ?>)?"
+                              data-form-id="form-hapus-aspirasi-<?= (int)$row['id'] ?>"
+                              title="Hapus Aspirasi Permanen">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash-fill" viewBox="0 0 16 16">
+                          <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5.5zm3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0z"/>
+                        </svg>
+                      </button>
+                    </td>
+                  <?php endif; ?>
+                  <!-- ▲▲▲ SELESAI TAMBAHAN ▲▲▲ -->
 
                 </tr>
               <?php endwhile; else: ?>
@@ -361,6 +378,7 @@ if (!empty($sqlList)) {
                   $colspan = 9; // Kolom dasar
                   if ($can_ubah_status) $colspan++; // Tambah 1 jika Eksekutor
                   if ($role === 'admin') $colspan++; // Tambah 1 jika Admin (Monitor/Eksekutor/Superadmin)
+                  if ($is_superadmin) $colspan++; // Tambah 1 jika Superadmin (untuk Hapus)
                 ?>
                 <tr><td colspan="<?= $colspan ?>" class="text-center text-muted">Belum ada aspirasi (sesuai scope Anda).</td></tr>
                 <!-- ▲▲▲ SELESAI PERBAIKAN ▲▲▲ -->

@@ -78,7 +78,7 @@
 
   <div class="hero-content container">
     <img src="logo.jpg" alt="Logo UDINUS" class="logo">
-    <h1>💬 Aspirasi Mahasiswa</h1>
+    <h1>Aspirasi Mahasiswa</h1>
     <p class="subtitle">Suara Anda untuk Kemajuan Universitas Dian Nuswantoro</p>
     <a href="login.php" class="btn btn-custom shadow">Masuk ke Sistem</a>
   </div>
